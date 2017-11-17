@@ -1,4 +1,4 @@
-from numpy import shape, mat, zeros, random, nonzero, mean, NINF, floor
+from numpy import shape, mat, zeros, random, nonzero, mean, NINF, nan
 import time
 
 
@@ -33,7 +33,7 @@ def randCent(dataSet, k):
         # rangeJ = float(max(dataSet[:, j]) - minJ)
         # centroids[:, j] = mat(minJ + rangeJ * random.rand(k, 1))
         centroids[j] = dataSet[int(rprtt[j, 0])]
-    print "finish random k cluster"
+    print "finish random %d cluster" % k
     return centroids
 
 
@@ -71,7 +71,9 @@ def kMeans(dataSet, k, distMeas=simMeasure, createCent=randCent):
             ptsInClust = dataSet[nonzero(clusterAssment[:, 0].A == cent)[
                 0]]  # get all the point in this cluster
             # assign centroid to mean
-            centroids[cent, :] = mean(ptsInClust, axis=0)
+            new_rprtt = mean(ptsInClust, axis=None)
+            if new_rprtt is not nan:
+                centroids[cent, :] = mean(ptsInClust, axis=0)
     print numIter
     return centroids, clusterAssment
 
@@ -82,7 +84,8 @@ SDSet = {}
 # genenameset = getGeneName('dataset/transposed_case_0.csv')
 dataset = readFile('dataset/processed_case.csv')
 datMat = mat(dataset)
-for k in range(2, 4):
+for k in range(33, 34):
+    print "k = %d" % k
     start_time = time.time()
     rprtts, cluAsg = kMeans(datMat, k)
     print time.time() - start_time, " seconds"

@@ -5,7 +5,6 @@ import time
 def readFile(filename):
     file_iter = open(filename, 'rU')
     dataset = []
-    file_iter.readline()
     for line in file_iter:
         line = line.strip().rstrip(',')                         # Remove trailing comma
         temp = line.split(',')
@@ -25,16 +24,16 @@ def getGeneName(filename):
 
 def randCent(dataSet, k):
     n = shape(dataSet)[1]
-    print "choose representative"
+    # print "choose representative"
     centroids = mat(zeros((k, n)))  # create centroid mat
     rprtt = 8560 * random.rand(k, 1)
-    print rprtt
+    # print rprtt
     for j in range(k):  # create random cluster centers, within bounds of each dimension
         # minJ = min(dataSet[:, j])
         # rangeJ = float(max(dataSet[:, j]) - minJ)
         # centroids[:, j] = mat(minJ + rangeJ * random.rand(k, 1))
         centroids[j] = dataSet[int(rprtt[j, 0])]
-    print "finish choose"
+    print "finish random k cluster"
     return centroids
 
 
@@ -80,10 +79,10 @@ def kMeans(dataSet, k, distMeas=simMeasure, createCent=randCent):
 SSet = {}
 DSet = {}
 SDSet = {}
-genenameset = getGeneName('dataset/transposed_case_0.csv')
-dataset = readFile('dataset/new_case_0.csv')
+# genenameset = getGeneName('dataset/transposed_case_0.csv')
+dataset = readFile('dataset/processed_case.csv')
 datMat = mat(dataset)
-for k in range(2, 30):
+for k in range(2, 4):
     start_time = time.time()
     rprtts, cluAsg = kMeans(datMat, k)
     print time.time() - start_time, " seconds"

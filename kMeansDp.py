@@ -1,4 +1,4 @@
-from numpy import shape, mat, zeros, random, nonzero, mean, NINF, nan
+from numpy import shape, mat, zeros, random, nonzero, mean, NINF, nan, delete
 import time
 
 
@@ -53,7 +53,7 @@ def kMeans(dataSet, k, distMeas=simMeasure, createCent=randCent):
     print "enter loop"
     while clusterChanged:
         numIter += 1
-        # print numIter
+        print numIter
         clusterChanged = False
         for i in range(m):  # assign each data point to cluster
             maxProduct = NINF
@@ -68,11 +68,10 @@ def kMeans(dataSet, k, distMeas=simMeasure, createCent=randCent):
             clusterAssment[i, :] = maxIndex, maxProduct
         # print centroids
         for cent in range(k):  # recalculate centroids
-            ptsInClust = dataSet[nonzero(clusterAssment[:, 0].A == cent)[
-                0]]  # get all the point in this cluster
-            # assign centroid to mean
-            new_rprtt = mean(ptsInClust, axis=None)
-            if new_rprtt is not nan:
+            memberList = nonzero(clusterAssment[:, 0].A == cent)[0]
+            if memberList != []:
+                ptsInClust = dataSet[memberList]  # get all the point in this cluster
+                # assign centroid to mean
                 centroids[cent, :] = mean(ptsInClust, axis=0)
     print numIter
     return centroids, clusterAssment
@@ -84,7 +83,7 @@ SDSet = {}
 # genenameset = getGeneName('dataset/transposed_case_0.csv')
 dataset = readFile('dataset/processed_case.csv')
 datMat = mat(dataset)
-for k in range(33, 34):
+for k in range(99, 100):
     print "k = %d" % k
     start_time = time.time()
     rprtts, cluAsg = kMeans(datMat, k)
@@ -92,12 +91,20 @@ for k in range(33, 34):
     print "cluster internal average sim"
     # calcute S
     innerAvgSim = mat(zeros((k, 2)))
+    emptyClusters = []
     for i in range(k):
-        sumSim = cluAsg[nonzero(cluAsg[:, 0].A == i)[0]]
+        memlist = nonzero(cluAsg[:, 0].A == i)[0]
+        if memlist == []:    ## this cluster has no member
+            emptyClusters.append(i)
+            continue
+        print memlist
+        sumSim = cluAsg[memlist]
         S = mean(sumSim[:, 1])
         innerAvgSim[i, 0] = i
         innerAvgSim[i, 1] = S
-    SSet[k] = mean(innerAvgSim[:, 1])
+    print "empty clusters", emptyClusters
+    processed_innerAvgSim = delete(innerAvgSim, (emptyClusters), axis=0)
+    SSet[k] = mean(processed_innerAvgSim[:, 1])
     # calculate D
     # print rprtts
     numPairs = (k**2 - k)/2
@@ -108,6 +115,8 @@ for k in range(33, 34):
             productSum += product
     DSet[k] = productSum/numPairs
     SDSet[k] = SSet[k] / DSet[k]
+    print SSet
+    print DSet
 print "SSet"
 print SSet
 print "DSet"

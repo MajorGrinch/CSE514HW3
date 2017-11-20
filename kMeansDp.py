@@ -136,10 +136,11 @@ def runKMeansWithK(start, end):
     print SDSet
 
 
-p = Pool()
-for x in range(33):
-    p.apply_async(runKMeansWithK, args=(x * 3 + 2, x * 3 + 4,))
-print 'Waiting for all process done...'
-p.close()
-p.join()
-print 'All Done'
+runKMeansWithK(62, 64)
+# p = Pool()
+# for x in range(33):
+#     p.apply_async(runKMeansWithK, args=(x * 3 + 2, x * 3 + 4,))
+# print 'Waiting for all process done...'
+# p.close()
+# p.join()
+# print 'All Done

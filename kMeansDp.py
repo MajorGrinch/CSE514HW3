@@ -1,5 +1,6 @@
 from numpy import shape, mat, zeros, random, nonzero, mean, NINF, delete
 import time
+from multiprocessing import Pool
 
 
 def readFile(filename):
@@ -70,61 +71,75 @@ def kMeans(dataSet, k, distMeas=simMeasure, createCent=randCent):
         for cent in range(k):  # recalculate centroids
             memberList = nonzero(clusterAssment[:, 0].A == cent)[0]
             if memberList != []:
-                ptsInClust = dataSet[memberList]  # get all the point in this cluster
+                # get all the point in this cluster
+                ptsInClust = dataSet[memberList]
                 # assign centroid to mean
                 centroids[cent, :] = mean(ptsInClust, axis=0)
     print numIter
     return centroids, clusterAssment
 
 
-SSet = {}
-DSet = {}
-SDSet = {}
-# genenameset = getGeneName('dataset/transposed_case_0.csv')
-dataset = readFile('dataset/processed_case.csv')
-datMat = mat(dataset)
-for k in range(2, 10):
-    print "k = %d" % k
-    start_time = time.time()
-    rprtts, cluAsg = kMeans(datMat, k)
-    print time.time() - start_time, " seconds"
-    print "cluster internal average sim"
-    # calcute S
-    innerAvgSim = mat(zeros((k, 2)))
-    emptyClusters = []
-    for i in range(k):
-        memlist = nonzero(cluAsg[:, 0].A == i)[0]
-        if memlist == []:       # this cluster has no member
-            emptyClusters.append(i)
-            continue
-        print memlist
-        memNum = len(memlist)
-        inClusterSimSum = 0
-        for m in range(memNum):
-            for n in range(m+1, memNum):
-                inClusterSimSum += simMeasure(datMat[m], datMat[n])
-        numPairs = (memNum**2 - memNum) / 2
-        inClusterSimSum_avg = inClusterSimSum / numPairs
-        innerAvgSim[i, 0] = i
-        innerAvgSim[i, 1] = inClusterSimSum_avg
-    print "empty clusters", emptyClusters
-    processed_innerAvgSim = delete(innerAvgSim, (emptyClusters), axis=0)  
-    SSet[k] = mean(processed_innerAvgSim[:, 1])
-    # calculate D
-    # print rprtts
-    numPairs = (k**2 - k)/2
-    productSum = 0
-    for i in range(k):
-        for j in range(i+1, k):
-            product = simMeasure(rprtts[i], rprtts[j])
-            productSum += product
-    DSet[k] = productSum/numPairs
-    SDSet[k] = SSet[k] / DSet[k]
+def runKMeansWithK(start, end):
+    SSet = {}
+    DSet = {}
+    SDSet = {}
+    # genenameset = getGeneName('dataset/transposed_case_0.csv')
+    dataset = readFile('dataset/processed_case.csv')
+    datMat = mat(dataset)
+    for k in range(start, end + 1):
+        print "k = %d" % k
+        start_time = time.time()
+        rprtts, cluAsg = kMeans(datMat, k)
+        print time.time() - start_time, " seconds"
+        print "cluster internal average sim"
+        # calcute S
+        innerAvgSim = mat(zeros((k, 2)))
+        emptyClusters = []
+        for i in range(k):
+            memlist = nonzero(cluAsg[:, 0].A == i)[0]
+            if memlist == []:       # this cluster has no member
+                emptyClusters.append(i)
+                continue
+            print memlist
+            memNum = len(memlist)
+            inClusterSimSum = 0
+            for m in range(memNum):
+                for n in range(m + 1, memNum):
+                    inClusterSimSum += simMeasure(datMat[m], datMat[n])
+            numPairs = (memNum**2 - memNum) / 2
+            inClusterSimSum_avg = inClusterSimSum / numPairs
+            innerAvgSim[i, 0] = i
+            innerAvgSim[i, 1] = inClusterSimSum_avg
+        print "empty clusters", emptyClusters
+        processed_innerAvgSim = delete(innerAvgSim, (emptyClusters), axis=0)
+        SSet[k] = mean(processed_innerAvgSim[:, 1])
+        # calculate D
+        # print rprtts
+        numPairs = (k**2 - k) / 2
+        productSum = 0
+        for i in range(k):
+            for j in range(i + 1, k):
+                product = simMeasure(rprtts[i], rprtts[j])
+                productSum += product
+        DSet[k] = productSum / numPairs
+        SDSet[k] = SSet[k] / DSet[k]
+    fp = open('result%d.txt' % start, 'w')
+    fp.write(str(SSet))
+    fp.write(str(DSet))
+    fp.write(str(SDSet))
+    fp.close()
+    print "SSet"
     print SSet
+    print "DSet"
     print DSet
-print "SSet"
-print SSet
-print "DSet"
-print DSet
-print "SDSet"
-print SDSet
+    print "SDSet"
+    print SDSet
+
+
+p = Pool()
+for x in range(33):
+    p.apply_async(runKMeansWithK, args=(x * 3 + 2, x * 3 + 4,))
+print 'Waiting for all process done...'
+p.close()
+p.join()
+print 'All Done'

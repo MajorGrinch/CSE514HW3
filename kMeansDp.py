@@ -53,7 +53,7 @@ def kMeans(dataSet, k, distMeas=simMeasure, createCent=randCent):
     print "enter loop"
     while clusterChanged:
         numIter += 1
-        print numIter
+        # print numIter
         clusterChanged = False
         for i in range(m):  # assign each data point to cluster
             maxProduct = NINF
@@ -94,16 +94,19 @@ for k in range(99, 100):
     emptyClusters = []
     for i in range(k):
         memlist = nonzero(cluAsg[:, 0].A == i)[0]
+        print memlist
         if memlist == []:    ## this cluster has no member
+            print "empty cluster"
             emptyClusters.append(i)
             continue
-        print memlist
+        # print memlist
         sumSim = cluAsg[memlist]
         S = mean(sumSim[:, 1])
         innerAvgSim[i, 0] = i
         innerAvgSim[i, 1] = S
     print "empty clusters", emptyClusters
     processed_innerAvgSim = delete(innerAvgSim, (emptyClusters), axis=0)
+    print processed_innerAvgSim
     SSet[k] = mean(processed_innerAvgSim[:, 1])
     # calculate D
     # print rprtts

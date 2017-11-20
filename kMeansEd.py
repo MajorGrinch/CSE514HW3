@@ -1,4 +1,5 @@
-from numpy import shape, mat, zeros, random, nonzero, mean, NINF, delete
+from numpy import shape, mat, zeros, random, nonzero, mean, inf, delete
+from numpy import sqrt, power, sum
 import time
 
 
@@ -6,7 +7,7 @@ def readFile(filename):
     file_iter = open(filename, 'rU')
     dataset = []
     for line in file_iter:
-        line = line.strip().rstrip(',')                         # Remove trailing comma
+        line = line.strip().rstrip(',')    # Remove trailing comma
         temp = line.split(',')
         vec = map(float, temp)
         # print vec
@@ -38,9 +39,7 @@ def randCent(dataSet, k):
 
 
 def simMeasure(vecA, vecB):
-    resMat = vecA.dot(vecB.getT())
-    # print resMat
-    return resMat[0, 0]
+    return sqrt(sum(power(vecA - vecB, 2)))  # la.norm(vecA-vecB)
 
 
 def kMeans(dataSet, k, distMeas=simMeasure, createCent=randCent):
@@ -53,24 +52,25 @@ def kMeans(dataSet, k, distMeas=simMeasure, createCent=randCent):
     print "enter loop"
     while clusterChanged:
         numIter += 1
-        # print numIter
+        print numIter
         clusterChanged = False
         for i in range(m):  # assign each data point to cluster
-            maxProduct = NINF
-            maxIndex = -1
+            minDist = inf
+            minIndex = -1
             for j in range(k):
                 distJI = distMeas(centroids[j, :], dataSet[i, :])
-                if distJI > maxProduct:
-                    maxProduct = distJI
-                    maxIndex = j
-            if clusterAssment[i, 0] != maxIndex:
+                if distJI < minDist:
+                    minDist = distJI
+                    minIndex = j
+            if clusterAssment[i, 0] != minIndex:
                 clusterChanged = True
-            clusterAssment[i, :] = maxIndex, maxProduct
+            clusterAssment[i, :] = minIndex, minDist
         # print centroids
         for cent in range(k):  # recalculate centroids
             memberList = nonzero(clusterAssment[:, 0].A == cent)[0]
             if memberList != []:
-                ptsInClust = dataSet[memberList]  # get all the point in this cluster
+                # get all the point in this cluster
+                ptsInClust = dataSet[memberList]
                 # assign centroid to mean
                 centroids[cent, :] = mean(ptsInClust, axis=0)
     print numIter
@@ -83,7 +83,7 @@ SDSet = {}
 # genenameset = getGeneName('dataset/transposed_case_0.csv')
 dataset = readFile('dataset/processed_case.csv')
 datMat = mat(dataset)
-for k in range(2, 10):
+for k in range(2, 101):
     print "k = %d" % k
     start_time = time.time()
     rprtts, cluAsg = kMeans(datMat, k)
@@ -98,30 +98,26 @@ for k in range(2, 10):
             emptyClusters.append(i)
             continue
         print memlist
-        memNum = len(memlist)
-        inClusterSimSum = 0
-        for m in range(memNum):
-            for n in range(m+1, memNum):
-                inClusterSimSum += simMeasure(datMat[m], datMat[n])
-        numPairs = (memNum**2 - memNum) / 2
-        inClusterSimSum_avg = inClusterSimSum / numPairs
+        sumSim = cluAsg[memlist]
+        S = mean(sumSim[:, 1])
         innerAvgSim[i, 0] = i
-        innerAvgSim[i, 1] = inClusterSimSum_avg
+        innerAvgSim[i, 1] = S
     print "empty clusters", emptyClusters
-    processed_innerAvgSim = delete(innerAvgSim, (emptyClusters), axis=0)  
+    processed_innerAvgSim = delete(innerAvgSim, (emptyClusters), axis=0)
     SSet[k] = mean(processed_innerAvgSim[:, 1])
     # calculate D
     # print rprtts
-    numPairs = (k**2 - k)/2
+    numPairs = (k**2 - k) / 2
     productSum = 0
     for i in range(k):
-        for j in range(i+1, k):
+        for j in range(i + 1, k):
             product = simMeasure(rprtts[i], rprtts[j])
             productSum += product
-    DSet[k] = productSum/numPairs
+    DSet[k] = productSum / numPairs
     SDSet[k] = SSet[k] / DSet[k]
-    print SSet
-    print DSet
+    print "SSet", SSet
+    print "DSet", DSet
+print "-----------------------"
 print "SSet"
 print SSet
 print "DSet"

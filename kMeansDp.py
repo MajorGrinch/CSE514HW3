@@ -137,7 +137,7 @@ def runKMeansWithK(start, end):
 
 
 p = Pool()
-for x in range(33):
+for x in range(20,21):
     p.apply_async(runKMeansWithK, args=(x * 3 + 2, x * 3 + 4,))
 print 'Waiting for all process done...'
 p.close()

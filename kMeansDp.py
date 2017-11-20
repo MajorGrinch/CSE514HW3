@@ -105,11 +105,17 @@ def runKMeansWithK(start, end):
             inClusterSimSum = 0
             for m in range(memNum):
                 for n in range(m + 1, memNum):
-                    inClusterSimSum += simMeasure(datMat[m], datMat[n])
+                    inClusterSimSum += simMeasure(
+                        datMat[memlist[m]], datMat[memlist[n]])
             numPairs = (memNum**2 - memNum) / 2
-            inClusterSimSum_avg = inClusterSimSum / numPairs
-            innerAvgSim[i, 0] = i
-            innerAvgSim[i, 1] = inClusterSimSum_avg
+            if numPairs != 0:
+                print "num of Pairs", numPairs
+                inClusterSimSum_avg = inClusterSimSum / numPairs
+                innerAvgSim[i, 0] = i
+                innerAvgSim[i, 1] = inClusterSimSum_avg
+            else:
+                innerAvgSim[i, 0] = i
+                innerAvgSim[i, 1] = 0
         print "empty clusters", emptyClusters
         processed_innerAvgSim = delete(innerAvgSim, (emptyClusters), axis=0)
         SSet[k] = mean(processed_innerAvgSim[:, 1])
@@ -136,10 +142,11 @@ def runKMeansWithK(start, end):
     print SDSet
 
 
-p = Pool()
-for x in range(30, 32):
-    p.apply_async(runKMeansWithK, args=(x * 3 + 2, x * 3 + 4,))
-print 'Waiting for all process done...'
-p.close()
-p.join()
-print 'All Done'
+if __name__ == '__main__':
+    p = Pool()
+    for i in range(0, 9):
+        p.apply_async(runKMeansWithK, args=(i * 11 + 2, i * 11 + 12,))
+    print 'Waiting for all process done...'
+    p.close()
+    p.join()
+    print 'All done'
